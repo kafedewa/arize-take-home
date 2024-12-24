@@ -1,8 +1,6 @@
 import { ChatOpenAI } from "@langchain/openai";
 import { OpenAIEmbeddings } from "@langchain/openai";
 import { MemoryVectorStore } from "langchain/vectorstores/memory";
-import "cheerio";
-import { CheerioWebBaseLoader } from "@langchain/community/document_loaders/web/cheerio";
 import { Document } from "@langchain/core/documents";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { pull } from "langchain/hub";
@@ -18,20 +16,10 @@ import {
 } from "@langchain/core/messages";
 import { ToolNode } from "@langchain/langgraph/prebuilt";
 import { toolsCondition } from "@langchain/langgraph/prebuilt";
-import { BaseMessage, isAIMessage } from "@langchain/core/messages";
+import { isAIMessage } from "@langchain/core/messages";
 import { MemorySaver } from "@langchain/langgraph";
 import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
 
-const prettyPrint = (message: BaseMessage) => {
-  let txt = `[${message._getType()}]: ${message.content}`;
-  if ((isAIMessage(message) && message.tool_calls?.length) || 0 > 0) {
-    const tool_calls = (message as AIMessage)?.tool_calls
-      ?.map((tc) => `- ${tc.name}(${JSON.stringify(tc.args)})`)
-      .join("\n");
-    txt += ` \nTools: \n${tool_calls}`;
-  }
-  console.log(txt);
-};
 
 
 const useLangChain = async () => {
@@ -49,18 +37,6 @@ const useLangChain = async () => {
   });
 
   // Load and chunk contents of blog
-  const pTagSelector = "pre";
-  const cheerioLoader = new CheerioWebBaseLoader(
-    "https://www.congress.gov/bill/118th-congress/house-bill/10545/text/eh?format=txt",
-    //"https://lilianweng.github.io/posts/2023-06-23-agent/",
-    {
-      selector: pTagSelector
-    }
-  );
-
-  //const docs = await cheerioLoader.load();
-
-  
 
   const billPath = "./src/assets/BILLS-118hr10545eh.pdf";
 
@@ -196,8 +172,6 @@ const useLangChain = async () => {
 
     for await (const step of await graphWithMemory.stream(inputs1, threadConfig)) {
       const lastMessage = step.messages[step.messages.length - 1];
-      prettyPrint(lastMessage);
-      console.log("-----\n");
 
       if (isAIMessage(lastMessage) && lastMessage.tool_calls?.length === 0) {
         return lastMessage.content;

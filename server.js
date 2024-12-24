@@ -30,40 +30,6 @@ app.post('/api/getNextResponse', async (req, res) => {
 
         const {message, messages} = req.body;
 
-        let formattedMessages = [
-            {
-                "role": "system",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "\"You are a helpful assistant."
-                  }
-                ]
-              }
-        ];
-
-        if(messages.length > 0){
-            formattedMessages = formattedMessages.concat(messages.map((r) => ({
-                role: r.role,
-                content: [{"type": "text", "text": r.message}]
-            })));
-        }
-
-        formattedMessages = formattedMessages.concat([{
-          role: "user",
-          content: [{"type": "text", "text": message}]
-        }]);
-
-        console.log(formattedMessages);
-
-        /*const completion = await openai.chat.completions.create({
-            model: "gpt-4o-mini",
-            messages: formattedMessages,
-            response_format: {
-                "type": "text"
-            },
-        });*/
-
         const completion = await getResult(message);
 
         res.status(200).json(completion);
