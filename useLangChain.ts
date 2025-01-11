@@ -44,9 +44,6 @@ const useLangChain = async () => {
 
   const docs = await loader.load();
 
-  console.log(docs);
-
-
   const splitter = new RecursiveCharacterTextSplitter({
     chunkSize: 1000, chunkOverlap: 200
   });
@@ -160,15 +157,15 @@ const useLangChain = async () => {
   const checkpointer = new MemorySaver();
   const graphWithMemory = graphBuilder.compile({ checkpointer });
 
-  // Specify an ID for the thread
-  const threadConfig = {
-    configurable: { thread_id: "abc123" },
-    streamMode: "values" as const,
-  };
 
-
-  const getResult = async (message: string) => {
+  const getResult = async (message: string, convId: string) => {
     let inputs1 = { messages: [{ role: "user", content: message }] };
+    
+    // Specify an ID for the thread
+    const threadConfig = {
+      configurable: { thread_id: convId },
+      streamMode: "values" as const,
+    };
 
     for await (const step of await graphWithMemory.stream(inputs1, threadConfig)) {
       const lastMessage = step.messages[step.messages.length - 1];

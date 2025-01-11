@@ -1,7 +1,9 @@
+import { useState } from "react";
 import useMessages from "../zustand/useMessages";
 
 const useGetCompletion = () => {
     const { messages, setMessages } = useMessages();
+    const [convId, setConvId] = useState(null);
 
     const getCompletion = async (message) => {
 
@@ -10,7 +12,7 @@ const useGetCompletion = () => {
             const res = await fetch("/api/getNextResponse", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ message, messages }),
+                body: JSON.stringify({ message, convId }),
             });
 
             const data = await res.json();
@@ -18,7 +20,11 @@ const useGetCompletion = () => {
                 throw new Error(data.error);
             }
 
-            setMessages([...messages,{id:messages.length, role:"user", message}, {id:messages.length + 1, role:"assistant", message:data}]);
+            if(!convId){
+                setConvId(data.convId);
+            }
+
+            setMessages([...messages,{id:messages.length, role:"user", message}, {id:messages.length + 1, role:"assistant", message:data.completion}]);
 
 
         } catch (error) {

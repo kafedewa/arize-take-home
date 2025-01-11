@@ -25,14 +25,22 @@ app.get("*", (req,res) =>{
 
 const {getResult} = await useLangChain();
 
+const getNewConvId = () => {
+  return Math.random().toString(36).substring(7);
+}
+
 app.post('/api/getNextResponse', async (req, res) => {
     try {
 
-        const {message, messages} = req.body;
+        let {message, convId} = req.body;
 
-        const completion = await getResult(message);
+        if(!convId){
+          convId = getNewConvId();
+        }
 
-        res.status(200).json(completion);
+        const completion = await getResult(message, convId);
+
+        res.status(200).json({completion, convId});
 
     } catch (error) {
 
