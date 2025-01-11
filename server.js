@@ -3,6 +3,7 @@ import dotenv from 'dotenv'
 import OpenAI from "openai";
 import path from 'path'
 import useLangChain from './useLangChain.js';
+import { v4 as uuidv4 } from 'uuid';
 
 dotenv.config();
 
@@ -13,6 +14,8 @@ const __dirname = path.resolve();
 
 const app = express();
 const port = process.env.PORT || 5000;
+
+let conversations = new Set();
 
 app.use(express.json());
 
@@ -26,7 +29,14 @@ app.get("*", (req,res) =>{
 const {getResult} = await useLangChain();
 
 const getNewConvId = () => {
-  return Math.random().toString(36).substring(7);
+  let newId = uuidv4();
+
+  if(conversations.has(newId)){
+    return getNewConvId();
+  }
+
+  conversations.add(newId);
+  return newId;
 }
 
 app.post('/api/getNextResponse', async (req, res) => {
@@ -36,6 +46,10 @@ app.post('/api/getNextResponse', async (req, res) => {
 
         if(!convId){
           convId = getNewConvId();
+        }
+
+        if(!conversations.has(convId)){
+          res.status(400).json({error: "Invalid conversation ID"});
         }
 
         const completion = await getResult(message, convId);
