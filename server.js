@@ -1,13 +1,11 @@
+import './instrumentation.js';
+
 import express from 'express'
 import dotenv from 'dotenv'
-import OpenAI from "openai";
 import path from 'path'
-import useLangChain from './useLangChain.js';
 import useOpenAI from './useOpenAI.js';
+
 dotenv.config();
-
-
-const openai = new OpenAI({apiKey: process.env.OPENAI_API_KEY});
 
 const __dirname = path.resolve();
 
