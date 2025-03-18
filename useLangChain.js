@@ -17,8 +17,6 @@ var __asyncValues = (this && this.__asyncValues) || function (o) {
 import { ChatOpenAI } from "@langchain/openai";
 import { OpenAIEmbeddings } from "@langchain/openai";
 import { MemoryVectorStore } from "langchain/vectorstores/memory";
-import "cheerio";
-import { CheerioWebBaseLoader } from "@langchain/community/document_loaders/web/cheerio";
 import { pull } from "langchain/hub";
 import { Annotation, MessagesAnnotation, StateGraph } from "@langchain/langgraph";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
@@ -30,15 +28,6 @@ import { toolsCondition } from "@langchain/langgraph/prebuilt";
 import { isAIMessage } from "@langchain/core/messages";
 import { MemorySaver } from "@langchain/langgraph";
 import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
-const prettyPrint = (message) => {
-    var _a, _b;
-    let txt = `[${message._getType()}]: ${message.content}`;
-    if ((isAIMessage(message) && ((_a = message.tool_calls) === null || _a === void 0 ? void 0 : _a.length)) || 0 > 0) {
-        const tool_calls = (_b = message === null || message === void 0 ? void 0 : message.tool_calls) === null || _b === void 0 ? void 0 : _b.map((tc) => `- ${tc.name}(${JSON.stringify(tc.args)})`).join("\n");
-        txt += ` \nTools: \n${tool_calls}`;
-    }
-    console.log(txt);
-};
 const useLangChain = () => __awaiter(void 0, void 0, void 0, function* () {
     const embeddings = new OpenAIEmbeddings({
         model: "text-embedding-3-large",
@@ -51,17 +40,9 @@ const useLangChain = () => __awaiter(void 0, void 0, void 0, function* () {
         openAIApiKey: process.env.OPENAI_API_KEY
     });
     // Load and chunk contents of blog
-    const pTagSelector = "pre";
-    const cheerioLoader = new CheerioWebBaseLoader("https://www.congress.gov/bill/118th-congress/house-bill/10545/text/eh?format=txt", 
-    //"https://lilianweng.github.io/posts/2023-06-23-agent/",
-    {
-        selector: pTagSelector
-    });
-    //const docs = await cheerioLoader.load();
     const billPath = "./src/assets/BILLS-118hr10545eh.pdf";
     const loader = new PDFLoader(billPath);
     const docs = yield loader.load();
-    console.log(docs);
     const splitter = new RecursiveCharacterTextSplitter({
         chunkSize: 1000, chunkOverlap: 200
     });
@@ -169,8 +150,6 @@ const useLangChain = () => __awaiter(void 0, void 0, void 0, function* () {
                 _e = false;
                 const step = _c;
                 const lastMessage = step.messages[step.messages.length - 1];
-                prettyPrint(lastMessage);
-                console.log("-----\n");
                 if (isAIMessage(lastMessage) && ((_d = lastMessage.tool_calls) === null || _d === void 0 ? void 0 : _d.length) === 0) {
                     return lastMessage.content;
                 }

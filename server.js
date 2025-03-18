@@ -3,7 +3,7 @@ import dotenv from 'dotenv'
 import OpenAI from "openai";
 import path from 'path'
 import useLangChain from './useLangChain.js';
-
+import useOpenAI from './useOpenAI.js';
 dotenv.config();
 
 
@@ -23,7 +23,7 @@ app.get("*", (req,res) =>{
   res.sendFile(path.join(__dirname, "frontend", "dist", "index.html"));
 })
 
-const {getResult} = await useLangChain();
+const {getResult} = await useOpenAI();
 
 app.post('/api/getNextResponse', async (req, res) => {
     try {

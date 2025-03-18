@@ -44,8 +44,6 @@ const useLangChain = async () => {
 
   const docs = await loader.load();
 
-  console.log(docs);
-
 
   const splitter = new RecursiveCharacterTextSplitter({
     chunkSize: 1000, chunkOverlap: 200
