@@ -2,73 +2,62 @@ import OpenAI from "openai";
 import fs from "fs";
 
 
-
 const useOpenAI = async () => {
     const openai = new OpenAI();
 
-    const assistant = await openai.beta.assistants.create({
-        name: "Bill Assistant",
-        instructions: "You are an expert on congressional bills. Use you knowledge base to answer questions about the provided bill.",
-        model: "gpt-4o",
-        tools: [{ type: "file_search", "file_search": { "max_num_results": 5 } }],
-    });
+    async function createFile(filePath: string) {
+        let result;
+        if (filePath.startsWith("http://") || filePath.startsWith("https://")) {
+          // Download the file content from the URL
+          const res = await fetch(filePath);
+          const buffer = await res.arrayBuffer();
+          const urlParts = filePath.split("/");
+          const fileName = urlParts[urlParts.length - 1];
+          const file = new File([buffer], fileName);
+          result = await openai.files.create({
+            file: file,
+            purpose: "assistants",
+          });
+        } else {
+          // Handle local file path
+          const fileContent = fs.createReadStream(filePath);
+          result = await openai.files.create({
+            file: fileContent,
+            purpose: "assistants",
+          });
+        }
+        return result.id;
+      }
+      
+      // Replace with your own file path or URL
+      const fileId = await createFile(
+        "./src/assets/BILLS-118hr10545eh.pdf"
+      );
+      
 
-    const fileStreams = ["./src/assets/BILLS-118hr10545eh.pdf"].map((path) =>
-        fs.createReadStream(path),
-    );
+      const vectorStore = await openai.vectorStores.create({
+        name: "BILLS-118hr10545eh",
+     });
 
-    // Create a vector store including our two files.
-    let vectorStore = await openai.beta.vectorStores.create({
-        name: "Bill",
-    });
-
-    await openai.beta.vectorStores.fileBatches.uploadAndPoll(vectorStore.id, { files: fileStreams })
-    await openai.beta.assistants.update(assistant.id, {
-        tool_resources: { file_search: { vector_store_ids: [vectorStore.id] } },
-    });
-    
-    const thread = await openai.beta.threads.create();
+        await openai.vectorStores.files.create(
+            vectorStore.id,
+            {
+                file_id: fileId,
+            }
+        );
 
     const getResult = async (userMessage: string) => {
-
-        const threadMessages = await openai.beta.threads.messages.create(
-            thread.id,
-            { role: "user", content: userMessage}
-          );
-
-
-        const run = await openai.beta.threads.runs.createAndPoll(thread.id, {
-            assistant_id: assistant.id,
-          });
         
-          
-          const messages = await openai.beta.threads.messages.list(thread.id, {
-            run_id: run.id,
-          });
+       const response = await openai.responses.create({
+            model: "gpt-4o-mini",
+            input: userMessage,
+            tools: [{
+                type: "file_search",
+                vector_store_ids: [vectorStore.id],
+            }],
+        });
 
-          console.log(messages);
-          
-          const message = messages.data.pop()!;
-          if (message.content[0].type === "text") {
-            const { text } = message.content[0];
-            const { annotations } = text;
-            const citations: string[] = [];
-          
-            let index = 0;
-            for (let annotation of annotations) {
-              text.value = text.value.replace(annotation.text, "[" + index + "]");
-              if ('file_citation' in annotation) {
-                const citedFile = await openai.files.retrieve(annotation.file_citation.file_id);
-                citations.push("[" + index + "]" + citedFile.filename);
-              }
-              index++;
-            }
-          
-            console.log(text.value);
-            console.log(citations.join("\n"));
-
-            return text.value;
-          }
+        return response.output_text;
 
     }
 
